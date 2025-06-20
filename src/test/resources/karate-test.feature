@@ -8,11 +8,14 @@ Feature: API de Personajes Marvel
     * url 'http://bp-se-test-cabcd9b246a5.herokuapp.com'
     * def username = 'HolguerS'
     * def charactersPath = '/' + username + '/api/characters'
+    * def randomNum = function(){ return Math.floor((Math.random() * 10000) + 1) }
+    * def uniqueId = randomNum()
+    * def characterName = 'Spider-Man-' + uniqueId
     * def validCharacter =
     """
     {
-      "name": "Spider-Man",
-      "alterego": "Peter Parker",
+      "name": "#(characterName)",
+      "alterego": "Peter Parker", 
       "description": "Superhéroe arácnido de Marvel",
       "powers": ["Agilidad", "Sentido arácnido", "Trepar muros"]
     }
@@ -20,7 +23,7 @@ Feature: API de Personajes Marvel
     * def duplicateCharacter =
     """
     {
-      "name": "Spider-Man",
+      "name": "#(characterName)",
       "alterego": "Peter Parker",
       "description": "Otro intento duplicado",
       "powers": ["Agilidad"]
@@ -38,7 +41,7 @@ Feature: API de Personajes Marvel
     * def updatedCharacter =
     """
     {
-      "name": "Spider-Man",
+      "name": "#(characterName)",
       "alterego": "Peter Parker",
       "description": "Superhéroe arácnido de Marvel (actualizado)",
       "powers": ["Agilidad", "Sentido arácnido", "Trepar muros"]
@@ -53,21 +56,24 @@ Feature: API de Personajes Marvel
       "powers": ["Nada"]
     }
     """
+
   Scenario: Obtener todos los personajes
     Given path charactersPath
     When method GET
     Then status 200
     And match response == '#array'
+
   Scenario: Crear personaje válido
     Given path charactersPath
     And request validCharacter
     And header Content-Type = 'application/json'
     When method POST
     Then status 201
-    And match response contains { name: 'Spider-Man' }
+    And match response.name contains 'Spider-Man'
     And match response contains { alterego: 'Peter Parker' }
     And match response.id == '#notnull'
     * def createdId = response.id
+
   Scenario: Obtener personaje por ID
     # Primero creamos un personaje para tener un ID válido
     Given path charactersPath
@@ -75,25 +81,31 @@ Feature: API de Personajes Marvel
     And header Content-Type = 'application/json'
     When method POST
     Then status 201
-    * def characterId = response.id    # Ahora obtenemos el personaje por su ID
+    * def characterId = response.id
+    
+    # Ahora obtenemos el personaje por su ID
     Given path charactersPath + '/' + characterId
     When method GET
     Then status 200
-    And match response.name == 'Spider-Man'
+    And match response.name contains 'Spider-Man'
     And match response.id == characterId
+
   Scenario: Crear personaje con nombre duplicado
     # Primero creamos un personaje
     Given path charactersPath
     And request validCharacter
     And header Content-Type = 'application/json'
     When method POST
-    Then status 201    # Intentamos crear otro con el mismo nombre
+    Then status 201
+    
+    # Intentamos crear otro con el mismo nombre
     Given path charactersPath
     And request duplicateCharacter
     And header Content-Type = 'application/json'
     When method POST
     Then status 400
     And match response.error == 'Character name already exists'
+
   Scenario: Crear personaje con datos inválidos
     Given path charactersPath
     And request invalidCharacter
@@ -104,11 +116,13 @@ Feature: API de Personajes Marvel
     And match response contains { alterego: '#notnull' }
     And match response contains { description: '#notnull' }
     And match response contains { powers: '#notnull' }
+
   Scenario: Obtener personaje inexistente
     Given path charactersPath + '/9999'
     When method GET
     Then status 404
     And match response.error == 'Character not found'
+
   Scenario: Actualizar personaje existente
     # Primero creamos un personaje
     Given path charactersPath
@@ -116,7 +130,9 @@ Feature: API de Personajes Marvel
     And header Content-Type = 'application/json'
     When method POST
     Then status 201
-    * def characterId = response.id    # Actualizamos el personaje
+    * def characterId = response.id
+    
+    # Actualizamos el personaje
     Given path charactersPath + '/' + characterId
     And request updatedCharacter
     And header Content-Type = 'application/json'
@@ -124,6 +140,7 @@ Feature: API de Personajes Marvel
     Then status 200
     And match response.description == 'Superhéroe arácnido de Marvel (actualizado)'
     And match response.id == characterId
+
   Scenario: Actualizar personaje inexistente
     Given path charactersPath + '/9999'
     And request nonExistentCharacter
@@ -131,6 +148,7 @@ Feature: API de Personajes Marvel
     When method PUT
     Then status 404
     And match response.error == 'Character not found'
+
   Scenario: Eliminar personaje existente
     # Primero creamos un personaje
     Given path charactersPath
@@ -138,13 +156,18 @@ Feature: API de Personajes Marvel
     And header Content-Type = 'application/json'
     When method POST
     Then status 201
-    * def characterId = response.id    # Eliminamos el personaje
+    * def characterId = response.id
+    
+    # Eliminamos el personaje
     Given path charactersPath + '/' + characterId
     When method DELETE
-    Then status 204    # Verificamos que ya no existe
+    Then status 204
+    
+    # Verificamos que ya no existe
     Given path charactersPath + '/' + characterId
     When method GET
     Then status 404
+
   Scenario: Eliminar personaje inexistente
     Given path charactersPath + '/9999'
     When method DELETE
