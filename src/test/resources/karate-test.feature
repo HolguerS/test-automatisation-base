@@ -145,9 +145,8 @@ Feature: API de Personajes Marvel
     Given path charactersPath + '/' + characterId
     When method GET
     Then status 404
-
   Scenario: Eliminar personaje inexistente
-    Given path baseUrl + '/9999'
+    Given path charactersPath + '/9999'
     When method DELETE
     Then status 404
     And match response.error == 'Character not found'
